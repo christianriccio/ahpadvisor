@@ -4,3 +4,5 @@ __pycache__/
 *.pyc
 .DS_Store
 data/ahp.db
+data/ahp.db-wal
+data/ahp.db-shm
