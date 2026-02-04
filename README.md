@@ -22,6 +22,12 @@ streamlit run app.py
 2. Metti `DATABASE_URL` nei Secrets di Streamlit Cloud.
 3. Pubblica la repo su GitHub e crea app su Streamlit Cloud.
 
+### Streamlit Community Cloud + Neon (consigliato)
+1. Crea un progetto su Neon (free).
+2. Copia la connection string Postgres (pooler).
+3. Imposta `DATABASE_URL` nei Secrets di Streamlit Cloud.
+4. Deploy dell’app.
+
 ## Dati attesi
 Colonna obbligatoria: `LOCALI`.
 

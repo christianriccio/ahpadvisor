@@ -157,7 +157,11 @@ def vote_section():
         st.warning("CR >= 0.10. Rivedi i confronti per maggiore coerenza.")
 
     if st.button("Invia voto"):
-        init_db()
+        try:
+            init_db()
+        except Exception as exc:
+            st.error(f"DB non raggiungibile: {exc}")
+            return
         weights_json = json.dumps({criteria[i]: float(weights[i]) for i in range(len(criteria))})
         save_vote(
             user_name=user_name,
@@ -181,8 +185,12 @@ def results_section():
         st.error(f"Dataset non valido. Colonne mancanti: {', '.join(missing)}")
         return
 
-    init_db()
-    rows = fetch_votes(st.session_state.dataset_hash)
+    try:
+        init_db()
+        rows = fetch_votes(st.session_state.dataset_hash)
+    except Exception as exc:
+        st.error(f"DB non raggiungibile: {exc}")
+        return
     st.write(f"Numero voti: {len(rows)}")
 
     if st_autorefresh is not None:
@@ -219,7 +227,7 @@ def results_section():
 
     top = ranking.head(5).copy()
     fig_bar = go.Figure()
-    fig_bar.add_trace(go.Bar(x=top["LOCALI"], y=top["score"]))
+    fig_bar.add_trace(go.Bar(x=top["LOCALI"], y=top["score"], marker_color="#1f77b4"))
     fig_bar.update_layout(title="Top 5 - Punteggio", xaxis_title="Locale", yaxis_title="Score")
     st.plotly_chart(fig_bar, use_container_width=True)
 
