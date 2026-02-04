@@ -43,6 +43,24 @@ def _normalize_db_url(db_url: str) -> str:
         except Exception:
             pass
 
+    # Force IPv4 by replacing hostname in netloc if we resolved one
+    if parsed.hostname and "hostaddr" in qs and qs["hostaddr"]:
+        host_ipv4 = qs["hostaddr"][0]
+        if host_ipv4:
+            netloc = parsed.netloc
+            # Replace hostname portion, preserving userinfo and port
+            if "@" in netloc:
+                userinfo, hostport = netloc.split("@", 1)
+                host = hostport.split(":")[0]
+                port = hostport.split(":")[1] if ":" in hostport else ""
+                hostport_new = f"{host_ipv4}:{port}" if port else host_ipv4
+                netloc = f\"{userinfo}@{hostport_new}\"
+            else:
+                host = netloc.split(":")[0]
+                port = netloc.split(":")[1] if ":" in netloc else ""
+                netloc = f\"{host_ipv4}:{port}\" if port else host_ipv4
+            parsed = parsed._replace(netloc=netloc)
+
     new_query = urlencode(qs, doseq=True)
     return urlunparse(parsed._replace(query=new_query))
 
