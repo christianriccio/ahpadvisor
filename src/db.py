@@ -6,6 +6,11 @@ from typing import List, Tuple
 from .ahp import matrix_from_json
 
 try:
+    import psycopg
+except Exception:
+    psycopg = None
+
+try:
     import psycopg2
 except Exception:
     psycopg2 = None
@@ -21,9 +26,11 @@ def _get_backend():
 def get_conn():
     backend, target = _get_backend()
     if backend == "postgres":
-        if psycopg2 is None:
-            raise RuntimeError("psycopg2 non installato")
-        return psycopg2.connect(target)
+        if psycopg is not None:
+            return psycopg.connect(target)
+        if psycopg2 is not None:
+            return psycopg2.connect(target)
+        raise RuntimeError("driver Postgres non installato")
     conn = sqlite3.connect(target, check_same_thread=False)
     conn.execute("PRAGMA journal_mode=WAL;")
     return conn
