@@ -31,8 +31,9 @@ def _normalize_db_url(db_url: str) -> str:
         return db_url
 
     qs = parse_qs(parsed.query)
-    if "sslmode" not in qs and parsed.hostname and parsed.hostname.endswith("supabase.co"):
-        qs["sslmode"] = ["require"]
+    if "sslmode" not in qs and parsed.hostname:
+        if parsed.hostname.endswith("supabase.co") or parsed.hostname.endswith("neon.tech"):
+            qs["sslmode"] = ["require"]
 
     if "hostaddr" not in qs and parsed.hostname:
         try:
@@ -42,6 +43,16 @@ def _normalize_db_url(db_url: str) -> str:
                 qs["hostaddr"] = [ip]
         except Exception:
             pass
+
+    # Neon pooler requires endpoint id in options when SNI unsupported
+    if parsed.hostname and "neon.tech" in parsed.hostname:
+        host = parsed.hostname
+        if host.startswith("ep-"):
+            endpoint_id = host.split(".", 1)[0]
+            options = qs.get("options", [])
+            if not any("endpoint=" in opt for opt in options):
+                options.append(f"endpoint={endpoint_id}")
+                qs["options"] = options
 
     # Force IPv4 by replacing hostname in netloc if we resolved one
     if parsed.hostname and "hostaddr" in qs and qs["hostaddr"]:
