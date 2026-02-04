@@ -1,6 +1,8 @@
 import json
 import os
+import socket
 import sqlite3
+from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
 from typing import List, Tuple
 
 from .ahp import matrix_from_json
@@ -19,8 +21,30 @@ except Exception:
 def _get_backend():
     db_url = os.getenv("DATABASE_URL")
     if db_url:
-        return "postgres", db_url
+        return "postgres", _normalize_db_url(db_url)
     return "sqlite", os.getenv("AHP_DB_PATH", "data/ahp.db")
+
+
+def _normalize_db_url(db_url: str) -> str:
+    parsed = urlparse(db_url)
+    if parsed.scheme not in ("postgres", "postgresql"):
+        return db_url
+
+    qs = parse_qs(parsed.query)
+    if "sslmode" not in qs and parsed.hostname and parsed.hostname.endswith("supabase.co"):
+        qs["sslmode"] = ["require"]
+
+    if "hostaddr" not in qs and parsed.hostname:
+        try:
+            infos = socket.getaddrinfo(parsed.hostname, parsed.port or 5432, socket.AF_INET)
+            if infos:
+                ip = infos[0][4][0]
+                qs["hostaddr"] = [ip]
+        except Exception:
+            pass
+
+    new_query = urlencode(qs, doseq=True)
+    return urlunparse(parsed._replace(query=new_query))
 
 
 def get_conn():
